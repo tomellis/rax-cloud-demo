@@ -21,6 +21,8 @@ class CloudFunctions:
         self.dns = pyrax.cloud_dns
         self.clb = pyrax.cloud_loadbalancers
 
+        # Pull vars into class
+        self.prefix = prefix
         self.image_id = image_id
         self.flavor_id = flavor_id
         self.count = count
@@ -31,10 +33,10 @@ class CloudFunctions:
         logging.debug("image_id: %s", (self.image_id))
         logging.debug("flavor_id: %s", (self.flavor_id))
 
-        for i in xrange(0, count):
+        for i in xrange(0, self.count):
             logging.info("Creating server...")
     
-            self.server_name = prefix + "-" + pyrax.utils.random_name(8, True)
+            self.server_name = self.prefix + "-" + pyrax.utils.random_name(8, True)
             logging.debug("Random server_name: %s", (self.server_name))
 
             server = self.cs.servers.create(self.server_name, self.image_id, self.flavor_id, files=self.files)
