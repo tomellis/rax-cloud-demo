@@ -10,8 +10,8 @@ import pyrax
 import pyrax.exceptions as exc
 import exceptions
 
-class CloudFunctions:
-    def __init__(self, prefix, image_id, flavor_id, count, files):
+class Setup():
+    def __init__(self):
         # Authenticate to London Rackspace Cloud
         conf = os.path.expanduser("~/creds")
         pyrax.set_credential_file(conf, "LON")
@@ -21,12 +21,25 @@ class CloudFunctions:
         self.dns = pyrax.cloud_dns
         self.clb = pyrax.cloud_loadbalancers
 
+class CloudFunctions(Setup):
+    def __init__(self, prefix, image_id, flavor_id, count, files):
+        
+        # Import creds and pointers from Setup class
+        Setup.__init__(self)
+
         # Pull vars into class
         self.prefix = prefix
         self.image_id = image_id
         self.flavor_id = flavor_id
         self.count = count
         self.files = files
+    
+    def random_name(self, prefix):
+        # Generate a random server name with a predefined prefix
+        self.server_name = self.prefix + "-" + pyrax.utils.random_name(8, True)
+        logging.debug("Random server_name: %s", (self.server_name))
+
+        return self.server_name
 
     def create_server(self):
         logging.debug("Starting server creation loop")
@@ -35,16 +48,16 @@ class CloudFunctions:
 
         for i in xrange(0, self.count):
             logging.info("Creating server...")
+            
+            self.random_name(self.prefix)
     
-            self.server_name = self.prefix + "-" + pyrax.utils.random_name(8, True)
-            logging.debug("Random server_name: %s", (self.server_name))
-
             server = self.cs.servers.create(self.server_name, self.image_id, self.flavor_id, files=self.files)
             print "Name: ", server.name
             print "ID: ", server.id
             print "Status: ", server.status
             print "Password: ", server.adminPass
             print "Networks: ", server.networks
+            return server.id
 
     def server_status(server_id):
         logging.debug("Checking status of server:")
