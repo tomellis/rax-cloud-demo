@@ -23,6 +23,7 @@ class Setup():
         self.clb = pyrax.cloud_loadbalancers
 
 class Status(Setup):
+    """ Helper functions running directly against the public cloud """
     def __init__(self, server_id):
         Setup.__init__(self)
 
@@ -79,15 +80,6 @@ class CloudServers(Setup):
             # Append server details to our own server list
             self.servers.append(server)
             logging.info("Name: %s\n ID: %s\n Status: %s\n Password: %s\n Networks: %s\n" % (server.name, server.id, server.status, server.adminPass, server.networks))
-
-    def get_publicip(server_id):
-        logging.debug("Getting IPv4 Address of server:")
-        logging.debug("server_id: %s", (server_id))
-
-        server = cs.servers.get(server_id)
-        logging.debug("Public IP: %s\n" % (server.accessIPv4))
-
-        return server.accessIPv4
 
     def get_servers(self):
         """ Return list of servers launched by create_server, much like cs.servers.list() """
