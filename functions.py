@@ -72,27 +72,25 @@ class CloudServers(Setup):
     
             server = self.cs.servers.create(self.server_name, self.image_id, self.flavor_id, files=self.files)
             self.servers.append(server)
-            print "Name: ", server.name
-            print "ID: ", server.id
-            print "Status: ", server.status
-            print "Password: ", server.adminPass
-            print "Networks: ", server.networks
+            logging.info("Name: %s\n ID: %s\n Status: %s\n Password: %s\n Networks: %s\n" % (server.name, server.id, server.status, server.adminPass, server.networks))
 
     def get_publicip(server_id):
         logging.debug("Getting IPv4 Address of server:")
         logging.debug("server_id: %s", (server_id))
 
         server = cs.servers.get(server_id)
-        print "Public IP: %s\n" % (server.accessIPv4)
+        logging.debug("Public IP: %s\n" % (server.accessIPv4))
+
+        return server.accessIPv4
 
     def get_servers(self):
         logging.debug("Populating list of servers")
 
         servers=[]
         for s in self.servers :
-            print "Server ID: %s" % (s.id)
+            logging.debug("Server ID: %s" % (s.id))
             servers.append(self.cs.servers.get(s.id))
-        print servers
+        logging.debug("Servers %s" % (servers))
 
         return servers
 
@@ -104,7 +102,6 @@ class Bootstrap(Setup):
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(server_ip, username='root')
         stdin, stdout, stderr = ssh.exec_command(cmd)
-        #print stdout.readlines()
         ssh.close()
 
     def knife_bootstrap(server_id):
@@ -130,16 +127,16 @@ class CloudDNS(Setup):
 
     def create_domain(self):
         try:
-            print "Creating domain: ", domain_name
+            logging.debug("Creating domain: %s" % (domain_name))
             dom = dns.create(name=self.domain_name, emailAddress=self.domain_email, ttl=self.domain_ttl, comment=self.domain_comment)
         except exc.DomainCreationFailed:
-            print "DomainCreationFailed!"
-            print "Trying to get existing domain record..."
+            logging.info("DomainCreationFailed!")
+            logging.info("Trying to get existing domain record...")
         try:
             dom = dns.find(name=self.domain_name)
-            print dom
+            logging.debug("Domain: %s" % (dom))
         except exc.NotFound:
-            print "Domain not found"
+            logging.info("Domain not found")
             pass
 
     def create_record(domain_name, fqdn_name, ip_addr):
