@@ -49,9 +49,9 @@ logging.debug("Files: %s", (files))
 # Launch server
 myserver=CloudServers(prefix, image_id, flavor_id, count, files=files)
 myserver.create_server()
+myservers.get_servers()
 
 # Get server build status
 server_id = "1234"
 mystatus=Status(server_id)
 mystatus.get_status()
-
