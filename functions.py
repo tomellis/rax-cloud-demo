@@ -27,17 +27,22 @@ class Status(Setup):
         Setup.__init__(self)
 
         self.server_id = server_id
+        self.server = self.cs.servers.get(self.server_id)
 
     def get_status(self):
-        logging.debug("Checking status of server:")
-        logging.debug("server_id: %s", (self.server_id))
+        logging.debug("Checking status of server_id: %s", (self.server_id))
+        logging.debug ("server.status: %s", (self.server.status))
 
-        server = self.cs.servers.get(self.server_id)
-        logging.debug ("server.status: %s", (server.status))
-        return server.status
+        return self.server.status
 
+    def get_publicip(self):
+        logging.debug("Getting IPv4 Address of server_id: %s", (self.server_id))
+        logging.debug("server.accessIPv4: %s\n" % (self.server.accessIPv4))
+
+        return self.server.accessIPv4
 
 class CloudServers(Setup):
+    """ Launch CloudServers """
     def __init__(self, prefix, image_id, flavor_id, count, files):
         
         # Import creds and pointers from Setup class
@@ -71,6 +76,7 @@ class CloudServers(Setup):
             self.random_name(self.prefix)
     
             server = self.cs.servers.create(self.server_name, self.image_id, self.flavor_id, files=self.files)
+            # Append server details to our own server list
             self.servers.append(server)
             logging.info("Name: %s\n ID: %s\n Status: %s\n Password: %s\n Networks: %s\n" % (server.name, server.id, server.status, server.adminPass, server.networks))
 

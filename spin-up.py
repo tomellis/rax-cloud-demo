@@ -29,7 +29,7 @@ image_id = "e4dbdba7-b2a4-4ee5-8e8f-4595b6d694ce"
 flavor_id = "2" # Name: 512MB Standard Instance, ID: 2, RAM: 512, Disk: 20, VCPUs: 1
 
 # Number of servers to create
-count = 1
+count = 1 
 
 # Read in SSH Key
 ssh_public_key_path = expanduser("~/.ssh/id_rsa.pub")
@@ -49,9 +49,9 @@ logging.debug("Files: %s", (files))
 # Launch server
 myserver=CloudServers(prefix, image_id, flavor_id, count, files=files)
 myserver.create_server()
-myservers.get_servers()
+myserver.get_servers()
 
 # Get server build status
-server_id = "1234"
-mystatus=Status(server_id)
-mystatus.get_status()
+#server_id = "1234"
+#mystatus=Status(server_id)
+#mystatus.get_status()
