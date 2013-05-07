@@ -43,6 +43,9 @@ class CloudServers(Setup):
         # Import creds and pointers from Setup class
         Setup.__init__(self)
 
+        # Setup servers list to use later
+        self.servers = []
+
         # Pull vars into class
         self.prefix = prefix
         self.image_id = image_id
@@ -68,6 +71,7 @@ class CloudServers(Setup):
             self.random_name(self.prefix)
     
             server = self.cs.servers.create(self.server_name, self.image_id, self.flavor_id, files=self.files)
+            self.servers.append(server)
             print "Name: ", server.name
             print "ID: ", server.id
             print "Status: ", server.status
@@ -81,7 +85,18 @@ class CloudServers(Setup):
         server = cs.servers.get(server_id)
         print "Public IP: %s\n" % (server.accessIPv4)
 
-class Bootstrap(setup):
+    def get_servers(self):
+        logging.debug("Populating list of servers")
+
+        servers=[]
+        for s in self.servers :
+            print "Server ID: %s" % (s.id)
+            servers.append(self.cs.servers.get(s.id))
+        print servers
+
+        return servers
+
+class Bootstrap(Setup):
     def ssh_bootstrap(server_ip):
         cmd = "bash -x /root/install-script.sh"
 
@@ -104,7 +119,7 @@ class Bootstrap(setup):
         os.system("knife node delete -y %s" % (server.name))
         os.system("knife client delete -y %s" % (server.name))
 
-class CloudDNS(setup):
+class CloudDNS(Setup):
     def __init__(self, domain_name, domain_email, domain_ttl, domain_comment):
         Setup.__init__(self)
 
