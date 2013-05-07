@@ -11,7 +11,8 @@ import pyrax.exceptions as exc
 import exceptions
 
 import functions
-from functions import CloudFunctions as cf
+from functions import CloudServers
+from functions import Status 
 
 # Set loglevel
 logging.basicConfig(level=logging.DEBUG)
@@ -46,5 +47,11 @@ files={'/root/.ssh/authorized_keys': ssh_public_key}
 logging.debug("Files: %s", (files))
 
 # Launch server
-myserver=cf(prefix, image_id, flavor_id, count, files=files)
+myserver=CloudServers(prefix, image_id, flavor_id, count, files=files)
 myserver.create_server()
+
+# Get server build status
+server_id = "1234"
+mystatus=Status(server_id)
+mystatus.get_status()
+

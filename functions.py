@@ -3,6 +3,7 @@
 import sys
 import logging
 import argparse
+import time
 import os
 from os.path import expanduser
 
@@ -21,7 +22,22 @@ class Setup():
         self.dns = pyrax.cloud_dns
         self.clb = pyrax.cloud_loadbalancers
 
-class CloudFunctions(Setup):
+class Status(Setup):
+    def __init__(self, server_id):
+        Setup.__init__(self)
+
+        self.server_id = server_id
+
+    def get_status(self):
+        logging.debug("Checking status of server:")
+        logging.debug("server_id: %s", (self.server_id))
+
+        server = self.cs.servers.get(self.server_id)
+        logging.debug ("server.status: %s", (server.status))
+        return server.status
+
+
+class CloudServers(Setup):
     def __init__(self, prefix, image_id, flavor_id, count, files):
         
         # Import creds and pointers from Setup class
@@ -40,7 +56,7 @@ class CloudFunctions(Setup):
         logging.debug("Random server_name: %s", (self.server_name))
 
         return self.server_name
-
+    
     def create_server(self):
         logging.debug("Starting server creation loop")
         logging.debug("image_id: %s", (self.image_id))
@@ -57,14 +73,6 @@ class CloudFunctions(Setup):
             print "Status: ", server.status
             print "Password: ", server.adminPass
             print "Networks: ", server.networks
-            return server.id
-
-    def server_status(server_id):
-        logging.debug("Checking status of server:")
-        logging.debug("server_id: %s", (server_id))
-
-        server = cs.servers.get(server_id)
-        print server.status
 
     def get_publicip(server_id):
         logging.debug("Getting IPv4 Address of server:")
