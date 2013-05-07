@@ -84,14 +84,18 @@ class CloudServers(Setup):
         return server.accessIPv4
 
     def get_servers(self):
+        """ Return list of servers launched by create_server, much like cs.servers.list() """
         logging.debug("Populating list of servers")
 
         servers=[]
-        for s in self.servers :
-            logging.debug("Server ID: %s" % (s.id))
-            servers.append(self.cs.servers.get(s.id))
+
+        for server in self.servers:
+            logging.debug("Server ID: %s" % (server.id))
+            servers.append(self.cs.servers.get(server.id))
+        
         logging.debug("Servers %s" % (servers))
 
+        # Return list of server objects 
         return servers
 
 class Bootstrap(Setup):
