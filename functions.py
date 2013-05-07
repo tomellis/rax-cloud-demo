@@ -81,6 +81,7 @@ class CloudServers(Setup):
         server = cs.servers.get(server_id)
         print "Public IP: %s\n" % (server.accessIPv4)
 
+class Bootstrap(setup):
     def ssh_bootstrap(server_ip):
         cmd = "bash -x /root/install-script.sh"
 
@@ -103,15 +104,24 @@ class CloudServers(Setup):
         os.system("knife node delete -y %s" % (server.name))
         os.system("knife client delete -y %s" % (server.name))
 
-    def create_domain(domain_name, domain_email, domain_ttl, domain_comment):
+class CloudDNS(setup):
+    def __init__(self, domain_name, domain_email, domain_ttl, domain_comment):
+        Setup.__init__(self)
+
+        self.domain_name = domain_name
+        self.domain_email = domain_email
+        self.domain_ttl = domain_ttl
+        self.domain_comment = domain_comment
+
+    def create_domain(self):
         try:
             print "Creating domain: ", domain_name
-            dom = dns.create(name=domain_name, emailAddress=domain_email, ttl=domain_ttl, comment=domain_comment)
+            dom = dns.create(name=self.domain_name, emailAddress=self.domain_email, ttl=self.domain_ttl, comment=self.domain_comment)
         except exc.DomainCreationFailed:
             print "DomainCreationFailed!"
             print "Trying to get existing domain record..."
         try:
-            dom = dns.find(name=domain_name)
+            dom = dns.find(name=self.domain_name)
             print dom
         except exc.NotFound:
             print "Domain not found"
