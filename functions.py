@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 
-import sys
 import logging
-import argparse
-import time
 import os
-from os.path import expanduser
-
+import paramiko
 import pyrax
 import pyrax.exceptions as exc
-import exceptions
+
 
 class Setup():
     def __init__(self):
@@ -22,6 +18,7 @@ class Setup():
         self.dns = pyrax.cloud_dns
         self.clb = pyrax.cloud_loadbalancers
 
+
 class Status(Setup):
     """ Helper functions running directly against the public cloud """
     def __init__(self, server_id):
@@ -32,7 +29,7 @@ class Status(Setup):
 
     def get_status(self):
         logging.debug("Checking status of server_id: %s", (self.server_id))
-        logging.debug ("server.status: %s", (self.server.status))
+        logging.debug("server.status: %s", (self.server.status))
 
         return self.server.status
 
@@ -42,10 +39,11 @@ class Status(Setup):
 
         return self.server.accessIPv4
 
+
 class CloudServers(Setup):
     """ Launch CloudServers """
     def __init__(self, prefix, image_id, flavor_id, count, files):
-        
+
         # Import creds and pointers from Setup class
         Setup.__init__(self)
 
@@ -58,14 +56,14 @@ class CloudServers(Setup):
         self.flavor_id = flavor_id
         self.count = count
         self.files = files
-    
+
     def random_name(self, prefix):
         # Generate a random server name with a predefined prefix
         self.server_name = self.prefix + "-" + pyrax.utils.random_name(8, True)
         logging.debug("Random server_name: %s", (self.server_name))
 
         return self.server_name
-    
+
     def create_server(self):
         logging.debug("Starting server creation loop")
         logging.debug("image_id: %s", (self.image_id))
@@ -73,9 +71,9 @@ class CloudServers(Setup):
 
         for i in xrange(0, self.count):
             logging.info("Creating server...")
-            
+
             self.random_name(self.prefix)
-    
+
             server = self.cs.servers.create(self.server_name, self.image_id, self.flavor_id, files=self.files)
             # Append server details to our own server list
             self.servers.append(server)
@@ -88,23 +86,24 @@ class CloudServers(Setup):
         """ Return list of servers launched by create_server, much like cs.servers.list() """
         logging.debug("Populating list of servers")
 
-        servers=[]
+        servers = []
 
         for server in self.servers:
             logging.debug("Server ID: %s" % (server.id))
             servers.append(self.cs.servers.get(server.id))
-        
+
         logging.debug("Get_servers: Servers %s" % (servers))
 
-        # Return list of server objects 
+        # Return list of server objects
         return servers
+
 
 class Bootstrap(Setup):
     @staticmethod
     def __init__(server):
         logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
         #mydns=CloudDNS(domain_name, domain_email, domain_ttl, domain_comment)
-        
+
     def ssh_bootstrap(server_ip):
         cmd = "bash -x /root/install-script.sh"
 
@@ -118,6 +117,7 @@ class Bootstrap(Setup):
         roles = "apache2,chef-demo"
         os.system("knife bootstrap --node-name %s --no-host-key-verify %s -r %s" % (server.name, server.accessIPv4, roles))
 
+
 class CloudDNS(Setup):
     def __init__(self, domain_name, domain_email, domain_ttl, domain_comment):
         Setup.__init__(self)
@@ -129,39 +129,39 @@ class CloudDNS(Setup):
 
     def create_domain(self):
         try:
-            logging.debug("Creating domain: %s" % (domain_name))
-            dom = dns.create(name=self.domain_name, emailAddress=self.domain_email, ttl=self.domain_ttl, comment=self.domain_comment)
+            logging.debug("Creating domain: %s" % (self.domain_name))
+            dom = self.dns.create(name=self.domain_name, emailAddress=self.domain_email, ttl=self.domain_ttl, comment=self.domain_comment)
         except exc.DomainCreationFailed:
             logging.info("DomainCreationFailed!")
             logging.info("Trying to get existing domain record...")
         try:
-            dom = dns.find(name=self.domain_name)
+            dom = self.dns.find(name=self.domain_name)
             logging.debug("Domain: %s" % (dom))
         except exc.NotFound:
             logging.info("Domain not found")
             pass
 
-    def create_record(domain_name, fqdn_name, ip_addr):
-        dom = dns.find(name=domain_name)
+    def create_record(self, domain_name, fqdn_name, ip_addr):
+        dom = self.dns.find(name=self.domain_name)
         a_record = {
-                "type": "A",
-                "name": fqdn_name,
-                "data": ip_addr,
-                "ttl": 6000,
-                }
+            "type": "A",
+            "name": fqdn_name,
+            "data": ip_addr,
+            "ttl": 6000,
+        }
 
         recs = dom.add_records([a_record])
 
-    def delete_domain(domain_name):
-        dom = dns.find(name=domain_name)
+    def delete_domain(self, domain_name):
+        dom = self.dns.find(name=self.domain_name)
         dom.delete()
+
 
 class CleanUp(Setup):
     def __init__(self):
         logging.debug("Nothing to see here yet!")
 
-    def knife_remove(server_name):
-        server = cs.servers.get(server_id)
-        os.system("knife rackspace server delete -y %s" % (server.name))
-        os.system("knife node delete -y %s" % (server.name))
-        os.system("knife client delete -y %s" % (server.name))
+    def knife_remove(self, server_name):
+        os.system("knife rackspace server delete -y %s" % (self.server.name))
+        os.system("knife node delete -y %s" % (self.server.name))
+        os.system("knife client delete -y %s" % (self.server.name))
