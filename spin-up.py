@@ -29,7 +29,7 @@ image_id = "e4dbdba7-b2a4-4ee5-8e8f-4595b6d694ce"
 flavor_id = "2" # Name: 512MB Standard Instance, ID: 2, RAM: 512, Disk: 20, VCPUs: 1
 
 # Number of servers to create
-count = 1 
+count = 2 
 
 # Read in SSH Key
 ssh_public_key_path = expanduser("~/.ssh/id_rsa.pub")
