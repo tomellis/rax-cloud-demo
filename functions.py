@@ -81,7 +81,7 @@ class CloudServers(Setup):
             self.servers.append(server)
             logging.info("Name: %s\n ID: %s\n Status: %s\n Password: %s\n Networks: %s\n" % (server.name, server.id, server.status, server.adminPass, server.networks))
             # Set up callback thread so that waiting for server to become active is non-blocking
-            pyrax.utils.wait_until(server, "status", ["ACTIVE", "ERROR"], callback=self.get_servers(),interval=30, attempts=0, verbose=True)
+            pyrax.utils.wait_until(server, "status", ["ACTIVE", "ERROR"], callback=bootstrap, interval=20, attempts=0, verbose=True)
 
     def get_servers(self):
         """ Return list of servers launched by create_server, much like cs.servers.list() """
@@ -98,9 +98,16 @@ class CloudServers(Setup):
         # Return list of server objects 
         return servers
 
+def bootstrap(server):
+        logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
+        #if hasattr(server, 'adminPass'):
+        #    print "root password:", server.adminPass
+        #else:
+        #    print "root password was not passed to this function"
+
 class Bootstrap(Setup):
-    def __init__(self, prefix, image_id, flavor_id, count, files):
-        print "temp"
+    def __init__(self):
+        logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
 
     def ssh_bootstrap(server_ip):
         cmd = "bash -x /root/install-script.sh"
