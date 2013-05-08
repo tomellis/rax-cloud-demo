@@ -1,0 +1,4 @@
+* make the bootstrap run through a callback so it is non-blocking
+* Link DNS into bootstrap
+* Create LB function
+* function to add server into LB 
