@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import os
+from os.path import expanduser
 import sys
 import pyrax
 
 # Authenticate to London Rackspace Cloud
-conf = os.path.expanduser("creds")
+conf = os.path.expanduser("~/creds")
 pyrax.set_credential_file(conf, "LON")
 
 # Instance name prefix 
