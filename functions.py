@@ -81,7 +81,7 @@ class CloudServers(Setup):
             self.servers.append(server)
             logging.info("Name: %s\n ID: %s\n Status: %s\n Password: %s\n Networks: %s\n" % (server.name, server.id, server.status, server.adminPass, server.networks))
             # Set up callback thread so that waiting for server to become active is non-blocking
-            pyrax.utils.wait_until(server, "status", ["ACTIVE", "ERROR"], callback=bootstrap, interval=20, attempts=0, verbose=True)
+            pyrax.utils.wait_until(server, "status", ["ACTIVE", "ERROR"], callback=Bootstrap, interval=20, attempts=0, verbose=True)
 
     def get_servers(self):
         """ Return list of servers launched by create_server, much like cs.servers.list() """
@@ -98,23 +98,11 @@ class CloudServers(Setup):
         # Return list of server objects 
         return servers
 
-def bootstrap(server):
-        logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
-        #if hasattr(server, 'adminPass'):
-        #    print "root password:", server.adminPass
-        #else:
-        #    print "root password was not passed to this function"
-        
-        # Bootstrap server with knife for chef
-        roles = "apt,aliases,apache2,networking_basic,chef-demo"
-
-        os.system("knife bootstrap --node-name %s --no-host-key-verify %s -r %s" % (server.name, server.accessIPv4, roles))
-
-
 class Bootstrap(Setup):
-    def __init__(self):
+    @staticmethod
+    def __init__(server):
         logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
-
+        
     def ssh_bootstrap(server_ip):
         cmd = "bash -x /root/install-script.sh"
 
@@ -124,17 +112,9 @@ class Bootstrap(Setup):
         stdin, stdout, stderr = ssh.exec_command(cmd)
         ssh.close()
 
-    def knife_bootstrap(server_id):
-        server = cs.servers.get(server_id)
-        roles = "apt,aliases,apache2,networking_basic,chef-demo"
-
+    def knife_bootstrap(server):
+        roles = "apache2,chef-demo"
         os.system("knife bootstrap --node-name %s --no-host-key-verify %s -r %s" % (server.name, server.accessIPv4, roles))
-
-    def knife_remove(server_name):
-        server = cs.servers.get(server_id)
-        os.system("knife rackspace server delete -y %s" % (server.name))
-        os.system("knife node delete -y %s" % (server.name))
-        os.system("knife client delete -y %s" % (server.name))
 
 class CloudDNS(Setup):
     def __init__(self, domain_name, domain_email, domain_ttl, domain_comment):
@@ -173,3 +153,13 @@ class CloudDNS(Setup):
     def delete_domain(domain_name):
         dom = dns.find(name=domain_name)
         dom.delete()
+
+class CleanUp(Setup):
+    def __init__(self):
+        logging.debug("Nothing to see here yet!")
+
+    def knife_remove(server_name):
+        server = cs.servers.get(server_id)
+        os.system("knife rackspace server delete -y %s" % (server.name))
+        os.system("knife node delete -y %s" % (server.name))
+        os.system("knife client delete -y %s" % (server.name))
