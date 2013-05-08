@@ -104,6 +104,12 @@ def bootstrap(server):
         #    print "root password:", server.adminPass
         #else:
         #    print "root password was not passed to this function"
+        
+        # Bootstrap server with knife for chef
+        roles = "apt,aliases,apache2,networking_basic,chef-demo"
+
+        os.system("knife bootstrap --node-name %s --no-host-key-verify %s -r %s" % (server.name, server.accessIPv4, roles))
+
 
 class Bootstrap(Setup):
     def __init__(self):
