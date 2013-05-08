@@ -79,7 +79,8 @@ class CloudServers(Setup):
             server = self.cs.servers.create(self.server_name, self.image_id, self.flavor_id, files=self.files)
             # Append server details to our own server list
             self.servers.append(server)
-            logging.info("Name: %s\n ID: %s\n Status: %s\n Password: %s\n Networks: %s\n" % (server.name, server.id, server.status, server.adminPass, server.networks))
+            logging.debug("Name: %s\n ID: %s\n Status: %s\n Password: %s\n Networks: %s\n" % (server.name, server.id, server.status, server.adminPass, server.networks))
+            logging.info("Building Server: %s - ID: %s\n" % (server.name, server.id))
             # Set up callback thread so that waiting for server to become active is non-blocking
             pyrax.utils.wait_until(server, "status", ["ACTIVE", "ERROR"], callback=Bootstrap, interval=20, attempts=0, verbose=True)
 
