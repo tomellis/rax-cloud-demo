@@ -135,6 +135,7 @@ class CloudDNS(Setup):
     def __init__(self, domain_name, domain_email, domain_ttl, domain_comment):
         Setup.__init__(self)
 
+        # DNS vars
         self.domain_name = domain_name
         self.domain_email = domain_email
         self.domain_ttl = domain_ttl
@@ -168,13 +169,3 @@ class CloudDNS(Setup):
     def delete_domain(self, domain_name):
         dom = self.dns.find(name=self.domain_name)
         dom.delete()
-
-
-class CleanUp(Setup):
-    def __init__(self):
-        logging.debug("Nothing to see here yet!")
-
-    def knife_remove(self, server_name):
-        os.system("knife rackspace server delete -y %s" % (self.server.name))
-        os.system("knife node delete -y %s" % (self.server.name))
-        os.system("knife client delete -y %s" % (self.server.name))
