@@ -16,7 +16,7 @@ class Setup():
         # Set pointers to cloud services
         self.cs = pyrax.cloudservers
         self.dns = pyrax.cloud_dns
-        self.clb = pyrax.cloud_loadbalancers
+        self.lb = pyrax.cloud_loadbalancers
 
 
 class Status(Setup):
@@ -213,3 +213,28 @@ class CloudDNS(Setup):
     def delete_domain(self, domain_name):
         dom = self.dns.find(name=self.domain_name)
         dom.delete()
+
+class CloudLoadBalancers(Setup):
+    def __init__(self, prefix):
+        Setup.__init__(self)
+
+        self.prefix = prefix
+        self.lb_name = self.prefix + "-" + pyrax.utils.random_name(8, True)
+
+    def build_lb(self):
+        servers = self.cs.servers.list()
+        nodes = []
+        for server in servers:
+            if self.prefix in server.name:
+                print "Adding to lb: %s - %s  " % (server.name, server.id)
+
+                for net in server.networks["private"]:
+                    if '.' in net:
+                        priv_addr = net
+
+                node = self.lb.Node(address=priv_addr, port=80, condition="ENABLED")
+                nodes.append(node)
+
+        vip = self.lb.VirtualIP(type="PUBLIC")
+        loadbalancer = self.lb.create(self.lb_name, port=80, protocol="HTTP", nodes=nodes, virtual_ips=[vip])
+
