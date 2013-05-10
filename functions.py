@@ -2,7 +2,6 @@
 
 import logging
 import os
-import paramiko
 import pyrax
 import pyrax.exceptions as exc
 
@@ -123,7 +122,7 @@ class CloudServers(Setup):
             logging.debug("Domain: %s" % (dom))
         except exc.NotFound:
             logging.info("Domain not found")
-    
+
     def create_record(self, server_name, ip_addr):
         logging.debug("Creating A record: %s - %s" % (server_name, ip_addr))
         try:
@@ -138,7 +137,7 @@ class CloudServers(Setup):
             "ttl": 6000,
         }
         try:
-            recs = dom.add_records([a_record])
+            dom.add_records([a_record])
         except exc.DomainRecordAdditionFailed:
             logging.info("Failed to add dns record, may already exist!")
 
@@ -150,7 +149,6 @@ class CloudServers(Setup):
         logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
         self.create_domain()
         self.create_record(server.name, server.accessIPv4)
-
 
 
 class CloudDNS(Setup):
@@ -178,7 +176,11 @@ class CloudDNS(Setup):
             pass
 
     def create_record(self, domain_name, fqdn_name, ip_addr):
-        dom = self.dns.find(name=self.domain_name)
+        try:
+            dom = self.dns.find(name=self.domain_name)
+        except exc.NotFound:
+            logging.info("Can't find existing domain, record creation failed")
+
         a_record = {
             "type": "A",
             "name": fqdn_name,
@@ -186,7 +188,10 @@ class CloudDNS(Setup):
             "ttl": 6000,
         }
 
-        recs = dom.add_records([a_record])
+        try:
+            dom.add_records([a_record])
+        except exc.DomainRecordAdditionFailed:
+            logging.info("Failed to add dns record, may already exist!")
 
     def delete_domain(self, domain_name):
         dom = self.dns.find(name=self.domain_name)
