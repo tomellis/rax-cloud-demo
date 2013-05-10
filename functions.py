@@ -73,7 +73,7 @@ class CloudServers(Setup):
         logging.debug("image_id: %s", (self.image_id))
         logging.debug("flavor_id: %s", (self.flavor_id))
 
-        # Test class to avoid spawning servers when debugging
+        # Debug only: Test class to avoid spawning servers when debugging
         #class Struct:
         #    def __init__(self, **entries):
         #        self.__dict__.update(entries)
@@ -93,6 +93,8 @@ class CloudServers(Setup):
             logging.info("Building Server: %s - ID: %s\n" % (server.name, server.id))
             # Set up callback thread so that waiting for server to become active is non-blocking
             pyrax.utils.wait_until(server, "status", ["ACTIVE", "ERROR"], callback=self.bootstrap, interval=20, attempts=0, verbose=False)
+            # Debug only:
+            #self.bootstrap(server)
 
     def get_servers(self):
         """ Return list of servers launched by create_server, much like cs.servers.list() """
@@ -121,6 +123,24 @@ class CloudServers(Setup):
             logging.debug("Domain: %s" % (dom))
         except exc.NotFound:
             logging.info("Domain not found")
+    
+    def create_record(self, server_name, ip_addr):
+        logging.debug("Creating A record: %s - %s" % (server_name, ip_addr))
+        try:
+            dom = self.dns.find(name=self.domain_name)
+        except exc.NotFound:
+            logging.info("Can't find existing domain, record creation failed")
+
+        a_record = {
+            "type": "A",
+            "name": server_name + "." + self.domain_name,
+            "data": ip_addr,
+            "ttl": 6000,
+        }
+        try:
+            recs = dom.add_records([a_record])
+        except exc.DomainRecordAdditionFailed:
+            logging.info("Failed to add dns record, may already exist!")
 
     def knife_bootstrap(server):
         roles = "apache2,chef-demo"
@@ -129,6 +149,8 @@ class CloudServers(Setup):
     def bootstrap(self, server):
         logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
         self.create_domain()
+        self.create_record(server.name, server.accessIPv4)
+
 
 
 class CloudDNS(Setup):
