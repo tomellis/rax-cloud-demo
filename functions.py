@@ -69,6 +69,14 @@ class CloudServers(Setup):
         logging.debug("image_id: %s", (self.image_id))
         logging.debug("flavor_id: %s", (self.flavor_id))
 
+        # Test class to avoid spawning servers when debugging
+        #class Struct:
+        #    def __init__(self, **entries):
+        #        self.__dict__.update(entries)
+        #
+        #s = {'name': "testserver", 'accessIPv4':"172.19.0.1", 'id':"1234", 'status':"ACTIVE", 'adminPass':"testing", 'networks':"none"}
+        #server = Struct(**s)
+
         for i in xrange(0, self.count):
             logging.info("Creating server...")
 
