@@ -21,6 +21,7 @@ def delete_server():
     for server in servers:
         if prefix in server.name:
             print "Terminating Server: %s - %s  " % (server.name, server.id)
+            knife_remove(server.name)
             server.delete()
 
 def delete_domain():
@@ -30,6 +31,10 @@ def delete_domain():
             print "Deleting domain: %s and all records " % (domain.name)
             domain.delete()
 
+def knife_remove(server_name):
+    os.system("knife rackspace server delete -y %s" % (server_name))
+    os.system("knife node delete -y %s" % (server_name))
+    os.system("knife client delete -y %s" % (server_name))
     
 delete_domain()
 delete_server()
