@@ -20,7 +20,7 @@ flavor_id = "2"  # Name: 512MB Standard Instance
                  # ID: 2, RAM: 512, Disk: 20, VCPUs:1
 
 # Number of servers to create
-count = 2
+count = 1
 
 # Read in SSH Key
 ssh_public_key_path = expanduser("~/.ssh/id_rsa.pub")
@@ -38,6 +38,12 @@ ssh_public_key = f.read()
 files = {'/root/.ssh/authorized_keys': ssh_public_key}
 logging.debug("Files: %s", (files))
 
+# DNS
+domain_name = "example.com"
+domain_email = "test@example.com"
+domain_ttl = "600"
+domain_comment = "Chef Demo"
+
 # Launch server
-myserver = CloudServers(prefix, image_id, flavor_id, count, files=files)
+myserver = CloudServers(prefix, image_id, flavor_id, count, files, domain_name, domain_email, domain_ttl, domain_comment)
 myserver.create_server()

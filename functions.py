@@ -42,7 +42,7 @@ class Status(Setup):
 
 class CloudServers(Setup):
     """ Launch CloudServers """
-    def __init__(self, prefix, image_id, flavor_id, count, files):
+    def __init__(self, prefix, image_id, flavor_id, count, files, domain_name, domain_email, domain_ttl, domain_comment):
 
         # Import creds and pointers from Setup class
         Setup.__init__(self)
@@ -56,6 +56,10 @@ class CloudServers(Setup):
         self.flavor_id = flavor_id
         self.count = count
         self.files = files
+        self.domain_name = domain_name
+        self.domain_email = domain_email
+        self.domain_ttl = domain_ttl
+        self.domain_comment = domain_comment
 
     def random_name(self, prefix):
         # Generate a random server name with a predefined prefix
@@ -88,7 +92,7 @@ class CloudServers(Setup):
             logging.debug("Name: %s\n ID: %s\n Status: %s\n Password: %s\n Networks: %s\n" % (server.name, server.id, server.status, server.adminPass, server.networks))
             logging.info("Building Server: %s - ID: %s\n" % (server.name, server.id))
             # Set up callback thread so that waiting for server to become active is non-blocking
-            pyrax.utils.wait_until(server, "status", ["ACTIVE", "ERROR"], callback=Bootstrap, interval=20, attempts=0, verbose=False)
+            pyrax.utils.wait_until(server, "status", ["ACTIVE", "ERROR"], callback=self.bootstrap, interval=20, attempts=0, verbose=False)
 
     def get_servers(self):
         """ Return list of servers launched by create_server, much like cs.servers.list() """
@@ -105,25 +109,26 @@ class CloudServers(Setup):
         # Return list of server objects
         return servers
 
-
-class Bootstrap(Setup):
-    @staticmethod
-    def __init__(server):
-        logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
-        #mydns=CloudDNS(domain_name, domain_email, domain_ttl, domain_comment)
-
-    def ssh_bootstrap(server_ip):
-        cmd = "bash -x /root/install-script.sh"
-
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(server_ip, username='root')
-        stdin, stdout, stderr = ssh.exec_command(cmd)
-        ssh.close()
+    def create_domain(self):
+        try:
+            logging.debug("Creating domain: %s" % (self.domain_name))
+            dom = self.dns.create(name=self.domain_name, emailAddress=self.domain_email, ttl=self.domain_ttl, comment=self.domain_comment)
+        except exc.DomainCreationFailed:
+            logging.info("DomainCreationFailed!")
+            logging.info("Trying to get existing domain record...")
+        try:
+            dom = self.dns.find(name=self.domain_name)
+            logging.debug("Domain: %s" % (dom))
+        except exc.NotFound:
+            logging.info("Domain not found")
 
     def knife_bootstrap(server):
         roles = "apache2,chef-demo"
         os.system("knife bootstrap --node-name %s --no-host-key-verify %s -r %s" % (server.name, server.accessIPv4, roles))
+
+    def bootstrap(self, server):
+        logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
+        self.create_domain()
 
 
 class CloudDNS(Setup):
