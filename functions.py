@@ -2,6 +2,7 @@
 
 import logging
 import os
+import time
 import pyrax
 import pyrax.exceptions as exc
 
@@ -41,7 +42,7 @@ class Status(Setup):
 
 class CloudServers(Setup):
     """ Launch CloudServers """
-    def __init__(self, prefix, image_id, flavor_id, count, files, domain_name, domain_email, domain_ttl, domain_comment):
+    def __init__(self, prefix, image_id, flavor_id, count, files, domain_name, domain_email, domain_ttl, domain_comment, rackconnect=False):
 
         # Import creds and pointers from Setup class
         Setup.__init__(self)
@@ -59,6 +60,7 @@ class CloudServers(Setup):
         self.domain_email = domain_email
         self.domain_ttl = domain_ttl
         self.domain_comment = domain_comment
+        self.rackconnect = rackconnect
 
     def random_name(self, prefix):
         # Generate a random server name with a predefined prefix
@@ -76,8 +78,11 @@ class CloudServers(Setup):
         #class Struct:
         #    def __init__(self, **entries):
         #        self.__dict__.update(entries)
-        #
-        #s = {'name': "testserver", 'accessIPv4':"172.19.0.1", 'id':"1234", 'status':"ACTIVE", 'adminPass':"testing", 'networks':"none"}
+        #s = {'name': "testserver", 'accessIPv4':"172.19.0.1", 'id':"1234", 'status':"ACTIVE", 'adminPass':"testing", 'networks':"none", 'metadata':
+        #    {"rackconnect_automation_feature_configure_network_stack": "ENABLED", 
+        #    "rackconnect_automation_feature_manage_software_firewall": "ENABLED", 
+        #    "rackconnect_automation_feature_provison_public_ip": "ENABLED", 
+        #    "rackconnect_automation_status": "DEPLOYING"} }
         #server = Struct(**s)
 
         for i in xrange(0, self.count):
@@ -109,6 +114,17 @@ class CloudServers(Setup):
 
         # Return list of server objects
         return servers
+
+    def rackconnect_status(self, server_id):
+        if self.rackconnect is True:
+            # If we are using rackconnect make sure we don't add the record until the IP has changed from public to rackconnectIP 
+            rcs = self.cs.servers.get(server_id)
+            print "DEBUG: ", rcs
+            print rcs.metadata
+            while rcs.metadata['rackconnect_automation_status'] == "DEPLOYING":
+                logging.info("Waiting for RackConnect... Sleeping.")
+                time.sleep(10)
+                logging.debug("Name: %s\n ID: %s\n Public IP: %s\n RackConnectStatus: %s\n" % (server.name, server.id, server.accessIPv4, rcs.metadata['rackconnect_automation_status']))
 
     def create_domain(self):
         try:
@@ -148,6 +164,7 @@ class CloudServers(Setup):
     def bootstrap(self, server):
         logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
         self.create_domain()
+        self.rackconnect_status(server.id)
         self.create_record(server.name, server.accessIPv4)
 
 
