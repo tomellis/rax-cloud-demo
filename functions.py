@@ -159,7 +159,8 @@ class CloudServers(Setup):
             logging.info("Can't find existing domain, record creation failed")
 
         # Pull an updated server object, as after RackConnect has finished it may have changed
-        server = self.cs.servers.get(server_id)
+        if self.rackconnect is True:
+            server = self.cs.servers.get(server_id)
 
         a_record = {
             "type": "A",
@@ -172,7 +173,11 @@ class CloudServers(Setup):
         except exc.DomainRecordAdditionFailed:
             logging.info("Failed to add dns record, may already exist!")
 
-    def knife_bootstrap(server):
+    def knife_bootstrap(self, server_id):
+        # Pull an updated server object, as after RackConnect has finished it may have changed
+        if self.rackconnect is True:
+            server = self.cs.servers.get(server_id)
+
         roles = "apache2,chef-demo"
         os.system("knife bootstrap --node-name %s --no-host-key-verify %s -r %s" % (server.name, server.accessIPv4, roles))
 
@@ -181,6 +186,7 @@ class CloudServers(Setup):
         self.create_domain()
         self.rackconnect_status(server.id)
         self.create_record(server.id)
+        self.knife_bootstrap(server.id)
 
 
 class CloudDNS(Setup):
