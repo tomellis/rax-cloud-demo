@@ -79,9 +79,9 @@ class CloudServers(Setup):
         #    def __init__(self, **entries):
         #        self.__dict__.update(entries)
         #s = {'name': "testserver", 'accessIPv4':"172.19.0.1", 'id':"1234", 'status':"ACTIVE", 'adminPass':"testing", 'networks':"none", 'metadata':
-        #    {"rackconnect_automation_feature_configure_network_stack": "ENABLED", 
-        #    "rackconnect_automation_feature_manage_software_firewall": "ENABLED", 
-        #    "rackconnect_automation_feature_provison_public_ip": "ENABLED", 
+        #    {"rackconnect_automation_feature_configure_network_stack": "ENABLED",
+        #    "rackconnect_automation_feature_manage_software_firewall": "ENABLED",
+        #    "rackconnect_automation_feature_provison_public_ip": "ENABLED",
         #    "rackconnect_automation_status": "DEPLOYING"} }
         #server = Struct(**s)
 
@@ -151,17 +151,20 @@ class CloudServers(Setup):
         except exc.NotFound:
             logging.info("Domain not found")
 
-    def create_record(self, server_name, ip_addr):
-        logging.debug("Creating A record: %s - %s" % (server_name, ip_addr))
+    def create_record(self, server_id):
+        logging.debug("Creating A record: %s" % (server_id))
         try:
             dom = self.dns.find(name=self.domain_name)
         except exc.NotFound:
             logging.info("Can't find existing domain, record creation failed")
 
+        # Pull an updated server object, as after RackConnect has finished it may have changed
+        server = self.cs.servers.get(server_id)
+
         a_record = {
             "type": "A",
-            "name": server_name + "." + self.domain_name,
-            "data": ip_addr,
+            "name": server.name + "." + self.domain_name,
+            "data": server.accessIPv4,
             "ttl": 6000,
         }
         try:
@@ -177,7 +180,7 @@ class CloudServers(Setup):
         logging.info("Server Built!\n Server Name: %s\n Server ID: %s\n Status: %s\n " % (server.name, server.id, server.status))
         self.create_domain()
         self.rackconnect_status(server.id)
-        self.create_record(server.name, server.accessIPv4)
+        self.create_record(server.id)
 
 
 class CloudDNS(Setup):
@@ -225,6 +228,7 @@ class CloudDNS(Setup):
     def delete_domain(self, domain_name):
         dom = self.dns.find(name=self.domain_name)
         dom.delete()
+
 
 class CloudLoadBalancers(Setup):
     def __init__(self, prefix):
