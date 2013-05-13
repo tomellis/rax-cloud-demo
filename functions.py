@@ -117,14 +117,26 @@ class CloudServers(Setup):
 
     def rackconnect_status(self, server_id):
         if self.rackconnect is True:
-            # If we are using rackconnect make sure we don't add the record until the IP has changed from public to rackconnectIP 
+            logging.info("Checking RackConnect status...")
             rcs = self.cs.servers.get(server_id)
-            print "DEBUG: ", rcs
-            print rcs.metadata
-            while rcs.metadata['rackconnect_automation_status'] == "DEPLOYING":
-                logging.info("Waiting for RackConnect... Sleeping.")
-                time.sleep(10)
-                logging.debug("Name: %s\n ID: %s\n Public IP: %s\n RackConnectStatus: %s\n" % (server.name, server.id, server.accessIPv4, rcs.metadata['rackconnect_automation_status']))
+            while True:  # Loop until we first can see the right metadata and then until it says rackconnect is fully deployed
+                logging.debug("RACKCONNECT DEBUG: Looping waiting for rackconnect to return data in the API")
+                time.sleep(5)
+                # Poll the API for new data
+                rcs = self.cs.servers.get(server_id)
+                if 'rackconnect_automation_status' in rcs.metadata:
+                    logging.debug("RACKCONNECT DEBUG: Found RackConnect Metadata in the API for %s" % (rcs.name))
+                    logging.debug("RACKCONNECT DEBUG: %s" % (rcs.metadata))
+                    while True:
+                        # Start a poll loop again
+                        logging.debug("RACKCONNECT DEBUG: Waiting for RackConnect Status to return DEPLOYED for %s" % (rcs.name))
+                        time.sleep(5)
+                        rcs = self.cs.servers.get(server_id)
+                        if rcs.metadata['rackconnect_automation_status'] == "DEPLOYED":
+                            logging.debug("RACKCONNECT COMPLETE:\n Name: %s\n ID: %s\n Public IP: %s\n RackConnectStatus: %s\n" % (rcs.name, rcs.id, rcs.accessIPv4, rcs.metadata['rackconnect_automation_status']))
+                            break
+                    break
+            return True
 
     def create_domain(self):
         try:
@@ -237,4 +249,3 @@ class CloudLoadBalancers(Setup):
 
         vip = self.lb.VirtualIP(type="PUBLIC")
         loadbalancer = self.lb.create(self.lb_name, port=80, protocol="HTTP", nodes=nodes, virtual_ips=[vip])
-
