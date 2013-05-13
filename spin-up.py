@@ -3,6 +3,7 @@
 import logging
 from os.path import expanduser
 from functions import CloudServers
+from functions import CloudLoadBalancers
 
 # Set loglevel
 logging.basicConfig(level=logging.DEBUG)
@@ -44,6 +45,11 @@ domain_email = "test@example.com"
 domain_ttl = "600"
 domain_comment = "Chef Demo"
 
+# Rackconnect
+rackconnect = True
+
 # Launch server
-myserver = CloudServers(prefix, image_id, flavor_id, count, files, domain_name, domain_email, domain_ttl, domain_comment)
+myserver = CloudServers(prefix, image_id, flavor_id, count, files, domain_name, domain_email, domain_ttl, domain_comment, rackconnect)
 myserver.create_server()
+#mylb = CloudLoadBalancers(prefix)
+#mylb.build_lb()
